@@ -1,0 +1,42 @@
+﻿<Window x:Class="AzureCognitiveSamples.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:AzureCognitiveSamples"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="350" Width="525">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="30"/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+        <StackPanel Orientation="Horizontal">
+            <TextBlock Text="Access Key" Margin="2" VerticalAlignment="Center"/>
+            <TextBox Name="tbAccessKey" Width="400" Margin="2" Text="-- access key --"/>
+        </StackPanel>
+        <Grid Grid.Row="1">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="150"/>
+            <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
+        <StackPanel Orientation="Vertical">
+            <Button Name="buttonTASentiment" Content="Sentiment" Margin="1" Click="buttonTASentiment_Click" ToolTip="Measure sentiment of text in the right upper text box."/>
+            <Button Name="buttonTAKeyPhrase" Content="Key Phrase" Margin="1" Click="buttonTAKeyPhrase_Click" ToolTip="Detect key phrases of text in the right upper text box."/>
+            <Button Name="buttonTATopics" Content="Topics" Margin="1" Click="buttonTATopics_Click" ToolTip="Detect topics of text in the right upper text box."/>
+            <TextBlock Name="tbStatus" />
+            <Button Name="buttonLanguage" Content="Language" Margin="1" Click="buttonLanguage_Click" ToolTip="Detect language of text in the right upper text box."/>
+            <TextBlock Name="tbLanguage" Text="jp" Margin="1"/>
+            <Button Name="buttonTranslate" Content="Translate" ToolTip="Under construction"/>
+        </StackPanel>
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition/>
+                <RowDefinition/>
+            </Grid.RowDefinitions>
+            <TextBox Name="tbSource" Margin="2" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" ToolTip="Please input source text here"/>
+            <TextBox Grid.Row="1" Name="tbResult" Margin="2"/>
+        </Grid>
+        </Grid>
+    </Grid>
+</Window>
