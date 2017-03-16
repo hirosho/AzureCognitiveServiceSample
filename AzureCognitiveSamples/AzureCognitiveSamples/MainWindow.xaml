@@ -5,15 +5,17 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:AzureCognitiveSamples"
         mc:Ignorable="d"
-        Title="MainWindow" Height="350" Width="525">
+        Title="MainWindow" Height="350" Width="640">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="30"/>
             <RowDefinition/>
         </Grid.RowDefinitions>
         <StackPanel Orientation="Horizontal">
-            <TextBlock Text="Access Key" Margin="2" VerticalAlignment="Center"/>
-            <TextBox Name="tbAccessKey" Width="400" Margin="2" Text="-- access key --"/>
+            <TextBlock Text="Text Analytics - Access Key" Margin="2" VerticalAlignment="Center" FontSize="10"/>
+            <TextBox Name="tbTAAccessKey" Width="200" Margin="2" Text="-- access key --" FontSize="10"/>
+            <TextBlock Text="Text Translator - Access Key" Margin="2" VerticalAlignment="Center" FontSize="10"/>
+            <TextBox Name="tbTTAccessKey" Width="200" Margin="2" Text="-- access key --" FontSize="10"/>
         </StackPanel>
         <Grid Grid.Row="1">
         <Grid.ColumnDefinitions>
@@ -27,7 +29,7 @@
             <TextBlock Name="tbStatus" />
             <Button Name="buttonLanguage" Content="Language" Margin="1" Click="buttonLanguage_Click" ToolTip="Detect language of text in the right upper text box."/>
             <TextBlock Name="tbLanguage" Text="jp" Margin="1"/>
-            <Button Name="buttonTranslate" Content="Translate" ToolTip="Under construction"/>
+            <Button Name="buttonTranslate" Content="Translate" ToolTip="Under construction" Click="buttonTranslate_Click"/>
         </StackPanel>
         <Grid Grid.Column="1">
             <Grid.RowDefinitions>

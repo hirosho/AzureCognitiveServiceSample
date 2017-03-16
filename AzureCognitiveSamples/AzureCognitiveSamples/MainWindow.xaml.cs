@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -28,20 +29,37 @@ namespace AzureCognitiveSamples
     /// </summary>
     public partial class MainWindow : Window
     {
-        private string accessKey = "";
+        private string taAccessKey = "-- access key --";
+        private string ttAccessKey = "-- access key --";
         public MainWindow()
         {
             InitializeComponent();
+            this.Loaded += MainWindow_Loaded;
         }
 
-        private bool FixAccessKey()
+        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            if (tbAccessKey.Text=="-- access key --")
+            tbTAAccessKey.Text = taAccessKey;
+            tbTTAccessKey.Text = ttAccessKey;
+        }
+
+        private bool CheckTAAccessKey()
+        {
+            if (tbTAAccessKey.Text == "-- access key --")
             {
                 MessageBox.Show("Please set valid access key!");
                 return false;
             }
-            accessKey  = tbAccessKey.Text;
+            return true;
+        }
+
+        private bool CheckTTAccessKey()
+        {
+            if (tbTTAccessKey.Text == "-- access key --")
+            {
+                MessageBox.Show("Please set valid access key!");
+                return false;
+            }
             return true;
         }
 
@@ -53,19 +71,26 @@ namespace AzureCognitiveSamples
         /// <param name="e"></param>
         private async void buttonTASentiment_Click(object sender, RoutedEventArgs e)
         {
-            if (!FixAccessKey()) return;
-             var detectedLanguage = await DetectLanguage();
+            if ((!CheckTAAccessKey()) || (!CheckTTAccessKey())) return;
+            var detectedLanguage = await DetectLanguage();
+            string sourceText = tbSource.Text;
+            string iso6391Name = detectedLanguage.iso6391Name;
+
+            if (detectedLanguage.iso6391Name == "ja") {
+                sourceText = await TranslateStringJAJP2ENUS(await GetAccessTokenForTranslation(), sourceText);
+                iso6391Name = "en";
+            }
 
             var client = new HttpClient();
             var queryString = HttpUtility.ParseQueryString(string.Empty);
-            client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", accessKey);
+            client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", taAccessKey);
             var uri = "https://westus.api.cognitive.microsoft.com/text/analytics/v2.0/sentiment" + queryString;
 
             var topicDocument = new Models.CSTAKeyPhraseDocument()
             {
                 id = "1",
-                text = tbSource.Text,
-                language = detectedLanguage.iso6391Name
+                text = sourceText,
+                language = iso6391Name
             };
 
             var topicRequest = new Models.CSTAKeyPhraseRequest();
@@ -102,12 +127,12 @@ namespace AzureCognitiveSamples
         /// <param name="e"></param>
         private async void buttonTAKeyPhrase_Click(object sender, RoutedEventArgs e)
         {
-            if (!FixAccessKey()) return;
+            if (!CheckTAAccessKey()) return;
             var detectedLanguage = await DetectLanguage();
 
             var client = new HttpClient();
             var queryString = HttpUtility.ParseQueryString(string.Empty);
-            client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", accessKey);
+            client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", taAccessKey);
             var uri = "https://westus.api.cognitive.microsoft.com/text/analytics/v2.0/keyPhrases" + queryString;
 
             var topicDocument = new Models.CSTAKeyPhraseDocument()
@@ -152,10 +177,10 @@ namespace AzureCognitiveSamples
         /// <param name="e"></param>
         private async void buttonTATopics_Click(object sender, RoutedEventArgs e)
         {
-            if (!FixAccessKey()) return;
+            if (!CheckTAAccessKey()) return;
             var client = new HttpClient();
             var queryString = HttpUtility.ParseQueryString(string.Empty);
-            client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", accessKey);
+            client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", taAccessKey);
             var uri = "https://westus.api.cognitive.microsoft.com/text/analytics/v2.0/topics" + queryString;
             HttpResponseMessage response;
 
@@ -192,7 +217,7 @@ namespace AzureCognitiveSamples
                     while (onGoing)
                     {
                         var resClient = new HttpClient();
-                        resClient.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", accessKey);
+                        resClient.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", taAccessKey);
                         Debug.WriteLine("Start to get chunk...");
                         tbStatus.Text = "Getting chunk : "+counter+"...";
                         var resResponse = await resClient.GetAsync(operationId);
@@ -231,14 +256,14 @@ namespace AzureCognitiveSamples
 
         private async void buttonLanguage_Click(object sender, RoutedEventArgs e)
         {
-            if (!FixAccessKey()) return;
+            if (!CheckTAAccessKey()) return;
 
             var result = await DetectLanguage();
             tbLanguage.Text = result.iso6391Name + ":" + result.score;
         }
 
         /// <summary>
-        /// Detect languege of text
+        /// Detect languege of text in tbSource
         /// This method get language of 1st document only.
         /// https://westus.dev.cognitive.microsoft.com/docs/services/TextAnalytics.V2.0/operations/56f30ceeeda5650db055a3c7
         /// </summary>
@@ -248,7 +273,7 @@ namespace AzureCognitiveSamples
             var result = new DetectedLanguage();
             var client = new HttpClient();
             var queryString = HttpUtility.ParseQueryString(string.Empty);
-            client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", accessKey);
+            client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", taAccessKey);
             var uri = "https://westus.api.cognitive.microsoft.com/text/analytics/v2.0/languages" + queryString;
             HttpResponseMessage response;
 
@@ -297,6 +322,67 @@ namespace AzureCognitiveSamples
                 id++;
             }
         }
+
+        private async Task<string> GetAccessTokenForTranslation()
+        {
+            string token = "";
+            var client = new HttpClient();
+            client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", ttAccessKey);
+            string url = "https://api.cognitive.microsoft.com/sts/v1.0/issueToken";
+            string empty = "";
+            byte[] byteData = Encoding.UTF8.GetBytes(empty);
+
+            using (var content = new ByteArrayContent(byteData))
+            {
+                HttpResponseMessage response = await client.PostAsync(url, content);
+                if (response.StatusCode == System.Net.HttpStatusCode.OK)
+                {
+                    using (var resStream = await response.Content.ReadAsStreamAsync())
+                    {
+                        if (response.Content.Headers.ContentLength.Value > 0)
+                        {
+                            var buf = new byte[response.Content.Headers.ContentLength.Value];
+                            var resLen = await resStream.ReadAsync(buf, 0, buf.Length);
+                            token = Encoding.UTF8.GetString(buf);
+                        }
+                    }
+                }
+            }
+            return token;
+        }
+
+        // reference - http://www.atmarkit.co.jp/ait/articles/1703/02/news012_2.html
+        private async Task<string> TranslateStringJAJP2ENUS(string accessToken , string text, string fromLang="ja-jp", string toLang="en-us")
+        {
+            string result = "";
+            string encoded = HttpUtility.UrlEncode(text);
+            string url = "http://api.microsofttranslator.com/v2/Http.svc/Translate?text=" + encoded
+                + "&from=" + fromLang + "&to=" + toLang
+                + "&category=generalnn";
+            var client = new HttpClient();
+            client.DefaultRequestHeaders.Add("Authorization", "Bearer " + accessToken);
+            HttpResponseMessage response = await client.GetAsync(url);
+            if(response.StatusCode== System.Net.HttpStatusCode.OK)
+            {
+                using (var resStream = await response.Content.ReadAsStreamAsync())
+                {
+                    if (response.Content.Headers.ContentLength.Value > 0)
+                    {
+                        var dcs = new DataContractSerializer(typeof(string));
+                        result = (string)dcs.ReadObject(resStream);
+                    }
+                }
+            }
+            return result;
+        }
+        private async void buttonTranslate_Click(object sender, RoutedEventArgs e)
+        {
+            if ((!CheckTAAccessKey()) || (!CheckTTAccessKey())) return;
+            var detectedLanguage = await DetectLanguage();
+            var accessToken = await GetAccessTokenForTranslation();
+            tbResult.Text = await TranslateStringJAJP2ENUS(accessToken, tbSource.Text);
+        }
+
 
         private class DetectedLanguage
         {
